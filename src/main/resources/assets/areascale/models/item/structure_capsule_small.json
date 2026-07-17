@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "areascale:item/structure_capsule_small"
+  }
+}

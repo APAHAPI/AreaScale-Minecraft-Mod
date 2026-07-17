@@ -1,0 +1,41 @@
+{
+  "item.areascale.selection_wand": "Selection Wand",
+  "item.areascale.structure_capsule": "Structure Capsule",
+  "block.areascale.display_platform": "Display Platform",
+  "key.areascale.confirm_scale": "Open Scale Command",
+  "key.areascale.open_settings": "Open Area Scale Settings",
+  "key.categories.areascale": "Area Scale",
+
+  "areascale.settings.title": "Area Scale Settings",
+  "areascale.settings.alias": "Chat command alias",
+  "areascale.settings.save": "Save",
+
+  "areascale.selection.pos1": "Position 1 set to %s, %s, %s",
+  "areascale.selection.pos2": "Position 2 set to %s, %s, %s",
+
+  "item.areascale.structure_capsule.empty": "Empty",
+  "item.areascale.structure_capsule.scale": "Scale: %sx",
+  "item.areascale.structure_capsule.size": "Original size: %s x %s x %s",
+  "item.areascale.structure_capsule.blocks": "%s blocks captured",
+
+  "block.areascale.display_platform.occupied": "This platform already has a structure on it. Right-click empty-handed to pick it up first.",
+  "block.areascale.display_platform.invalid_capsule": "This capsule doesn't have a structure captured in it.",
+
+  "commands.areascale.no_selection": "You need to select two positions first. Left-click a block with the Selection Wand for position 1, right-click for position 2.",
+  "commands.areascale.different_dimension": "Both selection points must be in the dimension you are currently in.",
+  "commands.areascale.invalid_factor": "The factor must be greater than 0.",
+  "commands.areascale.empty_selection": "That selection doesn't contain any blocks.",
+  "commands.areascale.too_large": "That selection has too many blocks to capture (server limit is %s, yours has %s) - ask a server admin to raise maxCaptureBlocks in config/areascale.json if needed.",
+  "commands.areascale.captured": "Captured a %s x%s structure capsule (%s x %s x %s, %s blocks) - it's in your inventory.",
+  "commands.areascale.undo_creative_only": "Undo is only available in creative mode.",
+  "commands.areascale.nothing_to_undo": "There's nothing to undo.",
+  "commands.areascale.undone": "Undone - the structure has been restored.",
+
+  "item.areascale.structure_placer": "Structure Placer",
+  "block.areascale.structure_placer": "Structure Placer",
+  "block.areascale.structure_placer.previewing": "Previewing - right-click again with the capsule to place it, or empty-handed to cancel.",
+  "block.areascale.structure_placer.blocked": "Can't place structure here - something is in the way.",
+  "block.areascale.structure_placer.placed": "Structure placed.",
+  "block.areascale.structure_placer.cancelled": "Preview cancelled.",
+  "block.areascale.structure_placer.invalid_capsule": "This capsule doesn't have a structure captured in it."
+}

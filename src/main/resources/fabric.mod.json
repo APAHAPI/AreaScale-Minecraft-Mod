@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "areascale",
+	"version": "${version}",
+	"name": "Area Scale",
+	"description": "Select an area with the Selection Wand and shrink or enlarge the structure inside it.",
+	"authors": [
+		"you"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.areascale.AreaScaleMod"
+		],
+		"client": [
+			"com.areascale.client.AreaScaleModClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.21.8",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
