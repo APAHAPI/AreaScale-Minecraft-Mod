@@ -5,10 +5,14 @@
 	"name": "Area Scale",
 	"description": "Select an area with the Selection Wand and shrink or enlarge the structure inside it.",
 	"authors": [
-		"you"
+		"wackysmoggy"
 	],
-	"contact": {},
-	"license": "CC0-1.0",
+	"contact": {
+		"homepage": "https://github.com/APAHAPI/AreaScaleMod",
+		"issues": "https://github.com/APAHAPI/AreaScaleMod/issues"
+	},
+	"license": "GPL-3.0",
+	"icon": "assets/areascale/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [

@@ -37,10 +37,18 @@ public class AreaScaleModClient implements ClientModInitializer {
         "key.categories.areascale"
     );
 
+    private static final KeyMapping EDIT_COORDINATES_KEY = new KeyMapping(
+        "key.areascale.edit_coordinates",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_UNKNOWN,
+        "key.categories.areascale"
+    );
+
     @Override
     public void onInitializeClient() {
         KeyBindingHelper.registerKeyBinding(CONFIRM_SCALE_KEY);
         KeyBindingHelper.registerKeyBinding(OPEN_SETTINGS_KEY);
+        KeyBindingHelper.registerKeyBinding(EDIT_COORDINATES_KEY);
 
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             ItemStack stack = player.getItemInHand(hand);
@@ -72,6 +80,11 @@ public class AreaScaleModClient implements ClientModInitializer {
             while (OPEN_SETTINGS_KEY.consumeClick()) {
                 if (client.player != null) {
                     client.setScreen(new AreaScaleSettingsScreen());
+                }
+            }
+            while (EDIT_COORDINATES_KEY.consumeClick()) {
+                if (client.player != null) {
+                    client.setScreen(new CoordinateEditScreen());
                 }
             }
         });

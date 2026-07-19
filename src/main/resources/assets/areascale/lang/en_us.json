@@ -4,6 +4,7 @@
   "block.areascale.display_platform": "Display Platform",
   "key.areascale.confirm_scale": "Open Scale Command",
   "key.areascale.open_settings": "Open Area Scale Settings",
+  "key.areascale.edit_coordinates": "Edit Selection Coordinates",
   "key.categories.areascale": "Area Scale",
 
   "areascale.settings.title": "Area Scale Settings",
