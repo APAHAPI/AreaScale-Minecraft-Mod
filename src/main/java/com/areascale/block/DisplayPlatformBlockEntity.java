@@ -17,16 +17,10 @@ import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
@@ -52,12 +46,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * (see the README) that no amount of orientation handling changes.
  */
 public class DisplayPlatformBlockEntity extends BlockEntity {
-    // Generous margin for the entity/display cleanup search radius (safe to over-search).
+    // Generous margin for the display cleanup search radius (safe to over-search).
     private static final double MARGIN = 1.0;
-    // The barrier shell hugs the diorama's actual footprint tightly instead - a full 1-block
-    // MARGIN here used to leave a very visible gap between the platform and the invisible
-    // wall, especially for small/shrunk dioramas.
-    private static final double BARRIER_MARGIN = 0.05;
 
     private UUID displayedId;
     private Direction facing = Direction.SOUTH;
@@ -74,7 +64,6 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
         this.displayedId = structureId;
         this.facing = facing.getAxis().isHorizontal() ? facing : Direction.SOUTH;
         spawnDisplays(level, data);
-        placeBarriers(level, footprintWorldBounds(data));
         setChanged();
     }
 
@@ -84,10 +73,7 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
             return Optional.empty();
         }
         Optional<StructureData> data = StructureDataStorage.get(level).get(displayedId);
-        data.ifPresent(d -> {
-            despawnDisplays(level, d);
-            removeBarriers(level, footprintWorldBounds(d));
-        });
+        data.ifPresent(d -> despawnDisplays(level, d));
         DisplayedStructure result = data.map(d -> new DisplayedStructure(displayedId, d)).orElse(null);
         displayedId = null;
         setChanged();
@@ -95,19 +81,6 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
     }
 
     public record DisplayedStructure(UUID id, StructureData data) {
-    }
-
-    /** The structure's actual (rotation-aware) world-space bounding box, used for the barrier shell. */
-    private AABB footprintWorldBounds(StructureData data) {
-        BlockPos base = getBlockPos().above();
-        RotationUtil.Footprint fp = RotationUtil.footprint(data.sizeX(), data.sizeZ(), RotationUtil.steps(facing));
-        float scale = data.scale();
-        double halfX = fp.sizeX() * scale / 2.0 + BARRIER_MARGIN;
-        double halfZ = fp.sizeZ() * scale / 2.0 + BARRIER_MARGIN;
-        return new AABB(
-            base.getX() + 0.5 - halfX, base.getY() - BARRIER_MARGIN, base.getZ() + 0.5 - halfZ,
-            base.getX() + 0.5 + halfX, base.getY() + data.sizeY() * scale + BARRIER_MARGIN, base.getZ() + 0.5 + halfZ
-        );
     }
 
     private void spawnDisplays(ServerLevel level, StructureData data) {
@@ -143,7 +116,7 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
             double y = base.getY() + ly * scale;
             double z = base.getZ() + 0.5 + (rotated[1] - centerZ) * scale;
 
-            BlockState rotatedState = blockState.rotate(rotation);
+            BlockState rotatedState = displayStateFor(blockState.rotate(rotation));
 
             CompoundTag tag = new CompoundTag();
             tag.put("block_state", NbtUtils.writeBlockState(rotatedState));
@@ -171,42 +144,29 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
             display.load(input);
             level.addFreshEntity(display);
         }
-
-        for (StructureData.CapturedEntity captured : data.entities()) {
-            spawnEntity(level, base, centerX, centerZ, scale, steps, captured);
-        }
+        // Captured entities (armor stands, mobs, etc.) are intentionally never spawned into the
+        // diorama - there's no real floor for them to stand on here, so they'd just fall out or
+        // wander off. Their data still lives in StructureData untouched, so the Structure Placer
+        // reconstructs them correctly when the structure is placed for real.
     }
 
-    private void spawnEntity(ServerLevel level, BlockPos base, double centerX, double centerZ, float scale,
-                              int steps, StructureData.CapturedEntity captured) {
-        EntityType<?> type = EntityType.byString(captured.entityType().toString()).orElse(null);
-        if (type == null) {
-            return;
+    /**
+     * Water and lava can never actually render through a Display.BlockDisplay - their block's
+     * getRenderShape() is hardcoded to RenderShape.INVISIBLE (real fluid rendering happens
+     * through a separate mesher that looks at neighboring fluid levels in the world, which a
+     * floating display entity doesn't have), so displaying the true block state here would just
+     * show nothing at all. Stand in with translucent colored glass purely for this cosmetic
+     * diorama - the underlying StructureData still stores the real water/lava, so the Structure
+     * Placer places actual fluid there.
+     */
+    private static BlockState displayStateFor(BlockState state) {
+        if (state.is(Blocks.WATER)) {
+            return Blocks.LIGHT_BLUE_STAINED_GLASS.defaultBlockState();
         }
-
-        Entity entity = type.create(level, EntitySpawnReason.TRIGGERED);
-        if (entity == null) {
-            return;
+        if (state.is(Blocks.LAVA)) {
+            return Blocks.ORANGE_STAINED_GLASS.defaultBlockState();
         }
-
-        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), captured.data());
-        entity.load(input);
-
-        double[] rotated = RotationUtil.rotateXZ(captured.relX(), captured.relZ(), steps);
-        double x = base.getX() + 0.5 + (rotated[0] - centerX) * scale;
-        double y = base.getY() + captured.relY() * scale;
-        double z = base.getZ() + 0.5 + (rotated[1] - centerZ) * scale;
-        entity.setPos(x, y, z);
-        entity.setYRot(entity.getYRot() + steps * 90f);
-
-        if (entity instanceof LivingEntity living) {
-            var scaleAttribute = living.getAttribute(Attributes.SCALE);
-            if (scaleAttribute != null) {
-                scaleAttribute.setBaseValue(scaleAttribute.getBaseValue() * scale);
-            }
-        }
-
-        level.addFreshEntity(entity);
+        return state;
     }
 
     private static BlockState[] buildDenseGrid(StructureData data) {
@@ -254,15 +214,8 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
     }
 
     private void despawnDisplays(ServerLevel level, StructureData data) {
-        if (data.entities().isEmpty()) {
-            for (Display.BlockDisplay display : level.getEntitiesOfClass(Display.BlockDisplay.class, displayBounds(data))) {
-                display.discard();
-            }
-            return;
-        }
-        // Also captured real entities (armor stands, etc.) reconstructed alongside the displays.
-        for (Entity entity : level.getEntities((Entity) null, displayBounds(data), e -> !(e instanceof Player))) {
-            entity.discard();
+        for (Display.BlockDisplay display : level.getEntitiesOfClass(Display.BlockDisplay.class, displayBounds(data))) {
+            display.discard();
         }
     }
 
@@ -274,53 +227,6 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
             base.getX() - halfWidth, base.getY() - MARGIN, base.getZ() - halfWidth,
             base.getX() + halfWidth, base.getY() + height, base.getZ() + halfWidth
         );
-    }
-
-    private void placeBarriers(ServerLevel level, AABB bounds) {
-        int minX = Mth.floor(bounds.minX);
-        int maxX = Mth.ceil(bounds.maxX) - 1;
-        int minY = Mth.floor(bounds.minY);
-        int maxY = Mth.ceil(bounds.maxY) - 1;
-        int minZ = Mth.floor(bounds.minZ);
-        int maxZ = Mth.ceil(bounds.maxZ) - 1;
-        BlockState barrier = Blocks.BARRIER.defaultBlockState();
-
-        for (int x = minX; x <= maxX; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                for (int z = minZ; z <= maxZ; z++) {
-                    if (x != minX && x != maxX && y != minY && y != maxY && z != minZ && z != maxZ) {
-                        continue;
-                    }
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (level.getBlockState(pos).isAir()) {
-                        level.setBlock(pos, barrier, Block.UPDATE_CLIENTS);
-                    }
-                }
-            }
-        }
-    }
-
-    private void removeBarriers(ServerLevel level, AABB bounds) {
-        int minX = Mth.floor(bounds.minX);
-        int maxX = Mth.ceil(bounds.maxX) - 1;
-        int minY = Mth.floor(bounds.minY);
-        int maxY = Mth.ceil(bounds.maxY) - 1;
-        int minZ = Mth.floor(bounds.minZ);
-        int maxZ = Mth.ceil(bounds.maxZ) - 1;
-
-        for (int x = minX; x <= maxX; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                for (int z = minZ; z <= maxZ; z++) {
-                    if (x != minX && x != maxX && y != minY && y != maxY && z != minZ && z != maxZ) {
-                        continue;
-                    }
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (level.getBlockState(pos).is(Blocks.BARRIER)) {
-                        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
-                    }
-                }
-            }
-        }
     }
 
     private static ListTag floatList(float... values) {

@@ -15,7 +15,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.tree.LiteralCommandNode;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -30,16 +29,7 @@ public final class AreaScaleCommand {
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        LiteralCommandNode<CommandSourceStack> node = dispatcher.register(build("areascale"));
-
-        String alias = AreaScaleConfig.get().commandAlias;
-        if (alias != null && !alias.isBlank() && !alias.equals("areascale")) {
-            dispatcher.register(Commands.literal(alias).redirect(node));
-        }
-    }
-
-    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> build(String name) {
-        return Commands.literal(name)
+        dispatcher.register(Commands.literal("areascale")
             .requires(source -> source.hasPermission(2))
             .then(Commands.literal("expand")
                 .then(Commands.argument("factor", DoubleArgumentType.doubleArg(0.001))
@@ -50,7 +40,7 @@ public final class AreaScaleCommand {
             .then(Commands.literal("clear")
                 .executes(AreaScaleCommand::clear))
             .then(Commands.literal("undo")
-                .executes(AreaScaleCommand::undo));
+                .executes(AreaScaleCommand::undo)));
     }
 
     private static int capture(CommandContext<CommandSourceStack> ctx, boolean expand) throws CommandSyntaxException {
@@ -142,15 +132,21 @@ public final class AreaScaleCommand {
         }
 
         e.data().place(player.level(), e.min());
-        removeMatchingCapsule(player.getInventory(), e.structureId());
-        StructureDataStorage.get(player.level()).remove(e.structureId());
+        // Only free the world-level structure entry if the capsule was still sitting untouched
+        // in the player's inventory - if it's gone, it's because the player already placed it
+        // on a Display Platform or Structure Placer, which is still referencing this same id.
+        // Freeing it out from under a live display leaves that display permanently stuck with
+        // no way to resolve or remove it, so when in doubt, leak the registry entry instead.
+        if (removeMatchingCapsule(player.getInventory(), e.structureId())) {
+            StructureDataStorage.get(player.level()).remove(e.structureId());
+        }
         UndoManager.clear(player);
 
         ctx.getSource().sendSuccess(() -> Component.translatable("commands.areascale.undone"), true);
         return 1;
     }
 
-    private static void removeMatchingCapsule(Inventory inventory, UUID structureId) {
+    private static boolean removeMatchingCapsule(Inventory inventory, UUID structureId) {
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);
             if (!(stack.getItem() instanceof com.areascale.item.StructureCapsuleItem)) {
@@ -159,9 +155,10 @@ public final class AreaScaleCommand {
             Optional<StructureCapsuleItem.CapsuleSummary> summary = StructureCapsuleItem.readSummary(stack);
             if (summary.isPresent() && summary.get().structureId().equals(structureId)) {
                 stack.shrink(1);
-                return;
+                return true;
             }
         }
+        return false;
     }
 
     private static String trimFactor(double factor) {

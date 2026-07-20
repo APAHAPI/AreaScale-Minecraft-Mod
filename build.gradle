@@ -58,6 +58,11 @@ jar {
 	inputs.property "projectName", projectName
 }
 
+// Final distributable jar name: areascale-<mod_version>-<minecraft_version>.jar
+remapJar {
+	archiveClassifier = project.minecraft_version
+}
+
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {

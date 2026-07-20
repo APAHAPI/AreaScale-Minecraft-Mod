@@ -76,12 +76,11 @@ public class StructurePlacerBlockEntity extends BlockEntity {
         BlockPos anchor = anchor();
         int steps = RotationUtil.steps(facing);
         Rotation rotation = RotationUtil.rotationFor(steps);
-        RotationUtil.Footprint fp = RotationUtil.footprint(data.sizeX(), data.sizeZ(), steps);
 
         for (int i = 0; i < data.blockCount(); i++) {
             BlockState blockState = data.palette().get(data.blockPaletteIndex()[i]).rotate(rotation);
             double[] r = RotationUtil.rotateXZ(data.blockX()[i], data.blockZ()[i], steps);
-            BlockPos pos = anchor.offset((int) r[0] - fp.minX(), data.blockY()[i], (int) r[1] - fp.minZ());
+            BlockPos pos = anchor.offset((int) r[0], data.blockY()[i], (int) r[1]);
 
             CompoundTag tag = new CompoundTag();
             tag.put("block_state", NbtUtils.writeBlockState(blockState));
@@ -110,13 +109,18 @@ public class StructurePlacerBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * True fixed-pivot rotation (see the class doc) can sweep the structure into negative
+     * local offsets from the anchor depending on facing, so this uses the footprint's actual
+     * min/max rather than assuming the structure always extends in the +X/+Z direction.
+     */
     private AABB bounds(StructureData data) {
         BlockPos anchor = anchor();
         int steps = RotationUtil.steps(facing);
         RotationUtil.Footprint fp = RotationUtil.footprint(data.sizeX(), data.sizeZ(), steps);
         return new AABB(
-            anchor.getX() - MARGIN, anchor.getY() - MARGIN, anchor.getZ() - MARGIN,
-            anchor.getX() + fp.sizeX() + MARGIN, anchor.getY() + data.sizeY() + MARGIN, anchor.getZ() + fp.sizeZ() + MARGIN
+            anchor.getX() + fp.minX() - MARGIN, anchor.getY() - MARGIN, anchor.getZ() + fp.minZ() - MARGIN,
+            anchor.getX() + fp.maxX() + 1 + MARGIN, anchor.getY() + data.sizeY() + MARGIN, anchor.getZ() + fp.maxZ() + 1 + MARGIN
         );
     }
 

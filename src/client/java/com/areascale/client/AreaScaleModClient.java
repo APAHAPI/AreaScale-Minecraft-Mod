@@ -15,7 +15,7 @@ import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
@@ -23,31 +23,15 @@ import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
 public class AreaScaleModClient implements ClientModInitializer {
-    private static final KeyMapping CONFIRM_SCALE_KEY = new KeyMapping(
-        "key.areascale.confirm_scale",
-        InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_K,
-        "key.categories.areascale"
-    );
-
-    private static final KeyMapping OPEN_SETTINGS_KEY = new KeyMapping(
-        "key.areascale.open_settings",
-        InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_UNKNOWN,
-        "key.categories.areascale"
-    );
-
     private static final KeyMapping EDIT_COORDINATES_KEY = new KeyMapping(
         "key.areascale.edit_coordinates",
         InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_UNKNOWN,
+        GLFW.GLFW_KEY_U,
         "key.categories.areascale"
     );
 
     @Override
     public void onInitializeClient() {
-        KeyBindingHelper.registerKeyBinding(CONFIRM_SCALE_KEY);
-        KeyBindingHelper.registerKeyBinding(OPEN_SETTINGS_KEY);
         KeyBindingHelper.registerKeyBinding(EDIT_COORDINATES_KEY);
 
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
@@ -71,21 +55,15 @@ public class AreaScaleModClient implements ClientModInitializer {
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (CONFIRM_SCALE_KEY.consumeClick()) {
-                if (client.player != null) {
-                    String alias = AreaScaleClientConfig.get().chatAlias;
-                    client.setScreen(new ChatScreen("/" + alias + " "));
-                }
-            }
-            while (OPEN_SETTINGS_KEY.consumeClick()) {
-                if (client.player != null) {
-                    client.setScreen(new AreaScaleSettingsScreen());
-                }
-            }
             while (EDIT_COORDINATES_KEY.consumeClick()) {
-                if (client.player != null) {
-                    client.setScreen(new CoordinateEditScreen());
+                if (client.player == null) {
+                    continue;
                 }
+                if (ClientSelectionState.getPos1() == null || ClientSelectionState.getPos2() == null) {
+                    client.player.displayClientMessage(Component.translatable("commands.areascale.select_first"), true);
+                    continue;
+                }
+                client.setScreen(new CoordinateEditScreen());
             }
         });
 

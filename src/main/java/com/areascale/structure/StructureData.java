@@ -231,10 +231,9 @@ public record StructureData(
      */
     public boolean canPlace(ServerLevel level, BlockPos anchor, Direction facing) {
         int steps = RotationUtil.steps(facing);
-        RotationUtil.Footprint fp = RotationUtil.footprint(sizeX, sizeZ, steps);
         for (int i = 0; i < blockCount(); i++) {
             double[] r = RotationUtil.rotateXZ(blockX[i], blockZ[i], steps);
-            BlockPos pos = anchor.offset((int) r[0] - fp.minX(), blockY[i], (int) r[1] - fp.minZ());
+            BlockPos pos = anchor.offset((int) r[0], blockY[i], (int) r[1]);
             if (!level.getBlockState(pos).isAir()) {
                 return false;
             }
@@ -249,9 +248,12 @@ public record StructureData(
     /**
      * Places the structure as real blocks/block entities/entities at its original, unscaled
      * size. Caller must have already checked {@link #canPlace}. Rotated around Y to match
-     * facing (SOUTH = identity, matching how it was captured) - the rotation pivots so the
-     * structure's near corner is always pinned to anchor rather than centered on it, so there
-     * is never a gap between the placer and the structure regardless of facing.
+     * facing (SOUTH = identity, matching how it was captured) - the rotation pivots around
+     * the structure's own original (0,0,0) capture corner, which stays pinned exactly at
+     * anchor for every facing (the rest of the structure sweeps around it, which can mean
+     * negative offsets - that's expected). This is a true fixed-pivot rotation, not a
+     * bounding-box recenter, so the placer's own position is always the corner, never the
+     * middle, of the placed structure.
      *
      * Blocks are placed in the same bottom-up order they were captured in, so most
      * support-from-below attachments (torches, redstone dust, saplings, etc.) settle
@@ -261,18 +263,17 @@ public record StructureData(
     public void place(ServerLevel level, BlockPos anchor, Direction facing) {
         int steps = RotationUtil.steps(facing);
         Rotation rotation = RotationUtil.rotationFor(steps);
-        RotationUtil.Footprint fp = RotationUtil.footprint(sizeX, sizeZ, steps);
 
         for (int i = 0; i < blockCount(); i++) {
             double[] r = RotationUtil.rotateXZ(blockX[i], blockZ[i], steps);
-            BlockPos pos = anchor.offset((int) r[0] - fp.minX(), blockY[i], (int) r[1] - fp.minZ());
+            BlockPos pos = anchor.offset((int) r[0], blockY[i], (int) r[1]);
             BlockState state = palette.get(blockPaletteIndex[i]).rotate(rotation);
             level.setBlock(pos, state, Block.UPDATE_ALL);
         }
 
         for (CapturedBlockEntity captured : blockEntities) {
             double[] r = RotationUtil.rotateXZ(captured.x(), captured.z(), steps);
-            BlockPos pos = anchor.offset((int) r[0] - fp.minX(), captured.y(), (int) r[1] - fp.minZ());
+            BlockPos pos = anchor.offset((int) r[0], captured.y(), (int) r[1]);
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity != null) {
                 ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), captured.data());
@@ -293,7 +294,7 @@ public record StructureData(
             entity.load(input);
 
             double[] r = RotationUtil.rotateXZ(captured.relX(), captured.relZ(), steps);
-            entity.setPos(anchor.getX() + r[0] - fp.minX(), anchor.getY() + captured.relY(), anchor.getZ() + r[1] - fp.minZ());
+            entity.setPos(anchor.getX() + r[0], anchor.getY() + captured.relY(), anchor.getZ() + r[1]);
             entity.setYRot(entity.getYRot() + steps * 90f);
             level.addFreshEntity(entity);
         }

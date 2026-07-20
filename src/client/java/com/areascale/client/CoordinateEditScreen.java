@@ -1,37 +1,34 @@
 package com.areascale.client;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.areascale.network.SetSelectionPointPayload;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 
 /**
- * "Menu hidden" by design: no background dim, no buttons, no title bar - just the six
- * coordinate values themselves, left-click to +1 / right-click to -1 (shift for +/-10),
- * so the player keeps a clear, unobstructed view of the wireframe selection box updating
- * live behind it. The game keeps running (not a pause screen).
+ * No background dim, no title bar - just real, clickable buttons for the six coordinate
+ * values, so the player keeps a clear view of the wireframe selection box updating live
+ * behind it. Left-click a value to +1, right-click to -1 (shift for +/-10). The game keeps
+ * running (not a pause screen).
  */
 public class CoordinateEditScreen extends Screen {
     private static final int NORMAL_STEP = 1;
     private static final int FAST_STEP = 10;
-    private static final int TEXT_COLOR = 0xFFFFFF;
-    private static final int LABEL_COLOR = 0xAAAAAA;
-    private static final int HINT_COLOR = 0x888888;
+    private static final int LABEL_COLOR = 0xFFAAAAAA;
+    private static final int HINT_COLOR = 0xFF888888;
+    private static final int PANEL_COLOR = 0xC0000000;
     private static final String[] AXIS_LABELS = {"X", "Y", "Z"};
+    private static final int BUTTON_WIDTH = 70;
+    private static final int BUTTON_HEIGHT = 14;
+    private static final int PANEL_MARGIN = 4;
 
     private final int[] pos1 = new int[3];
     private final int[] pos2 = new int[3];
-    private final List<Hotspot> hotspots = new ArrayList<>();
-
-    private record Hotspot(int x, int y, int width, int height, boolean isPos1, int axis) {
-    }
 
     public CoordinateEditScreen() {
         super(Component.empty());
@@ -48,52 +45,54 @@ public class CoordinateEditScreen extends Screen {
         writeTo(pos1, existingPos1 != null ? existingPos1 : fallback);
         writeTo(pos2, existingPos2 != null ? existingPos2 : fallback);
 
-        hotspots.clear();
         int baseX = 8;
-        int baseY = 8;
+        int baseY = 20;
         for (int axis = 0; axis < 3; axis++) {
-            hotspots.add(new Hotspot(baseX, baseY + axis * 12, 64, 11, true, axis));
-            hotspots.add(new Hotspot(baseX + 74, baseY + axis * 12, 64, 11, false, axis));
+            int y = baseY + axis * (BUTTON_HEIGHT + 2);
+            addRenderableWidget(new StepButton(baseX, y, pos1, axis, true));
+            addRenderableWidget(new StepButton(baseX + BUTTON_WIDTH + 10, y, pos2, axis, false));
         }
 
         sendUpdate(true);
         sendUpdate(false);
     }
 
+    /**
+     * The game's actual entry point is the final Screen#renderWithTooltip, which calls
+     * renderBackground() UNCONDITIONALLY before render() - that's what was drawing the
+     * panorama/blur/menu-background regardless of what render() itself did. Overriding
+     * render() alone can never suppress it; this is the method that actually controls it.
+     */
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Deliberately not calling renderBackground()/super.render() - the world stays
-        // fully visible behind this, no dark overlay, no widgets.
-        graphics.drawString(font, "Pos 1", 8, 0, LABEL_COLOR);
-        graphics.drawString(font, "Pos 2", 82, 0, LABEL_COLOR);
-
-        for (int axis = 0; axis < 3; axis++) {
-            int y = 8 + axis * 12;
-            graphics.drawString(font, AXIS_LABELS[axis] + ": " + pos1[axis], 8, y, TEXT_COLOR);
-            graphics.drawString(font, AXIS_LABELS[axis] + ": " + pos2[axis], 82, y, TEXT_COLOR);
-        }
-
-        graphics.drawString(font,
-            "Left-click +1, right-click -1 (shift: +/-10) - Esc to close",
-            8, 8 + 3 * 12 + 4, HINT_COLOR);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        // Intentionally empty - no panorama, no blur, no menu-background texture. The world
+        // stays fully visible and sharp behind this screen.
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 || button == 1) {
-            for (Hotspot spot : hotspots) {
-                if (mouseX >= spot.x() && mouseX <= spot.x() + spot.width()
-                    && mouseY >= spot.y() && mouseY <= spot.y() + spot.height()) {
-                    int step = hasShiftDown() ? FAST_STEP : NORMAL_STEP;
-                    int delta = button == 0 ? step : -step;
-                    int[] target = spot.isPos1() ? pos1 : pos2;
-                    target[spot.axis()] += delta;
-                    sendUpdate(spot.isPos1());
-                    return true;
-                }
-            }
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int hintY = 20 + 3 * (BUTTON_HEIGHT + 2) + 4;
+        int panelRight = 8 + BUTTON_WIDTH + 10 + BUTTON_WIDTH + PANEL_MARGIN;
+        int panelBottom = hintY + font.lineHeight + PANEL_MARGIN;
+        // Drawn before the buttons/text so it sits behind them - fill() immediately followed
+        // by drawString()/widget rendering in the same render() call is the same order vanilla
+        // itself uses for backdrop-behind-text (see GuiGraphics#drawStringWithBackdrop), so this
+        // reliably stays behind everything drawn after it.
+        graphics.fill(PANEL_MARGIN, PANEL_MARGIN, panelRight, panelBottom, PANEL_COLOR);
+
+        super.render(graphics, mouseX, mouseY, partialTick);
+
+        graphics.drawString(font, "Pos 1", 8, 8, LABEL_COLOR, true);
+        graphics.drawString(font, "Pos 2", 8 + BUTTON_WIDTH + 10, 8, LABEL_COLOR, true);
+
+        graphics.drawString(font,
+            "Left-click +1, right-click -1 (shift: +/-10) - Esc to close",
+            8, hintY, HINT_COLOR, true);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
     }
 
     private void sendUpdate(boolean isPos1) {
@@ -113,8 +112,38 @@ public class CoordinateEditScreen extends Screen {
         target[2] = pos.getZ();
     }
 
-    @Override
-    public boolean isPauseScreen() {
-        return false;
+    /**
+     * A real vanilla Button so it's unmistakably visible/clickable (matching what the button
+     * background sprite renders), but with left/right click both wired up to step the value -
+     * vanilla Button only ever fires onPress for left-click by default, so mouseClicked is
+     * overridden directly here instead of relying on onPress/isValidClickButton.
+     */
+    private final class StepButton extends Button {
+        private final int[] target;
+        private final int axis;
+
+        StepButton(int x, int y, int[] target, int axis, boolean isPos1) {
+            super(x, y, BUTTON_WIDTH, BUTTON_HEIGHT, labelFor(target, axis), b -> {
+            }, DEFAULT_NARRATION);
+            this.target = target;
+            this.axis = axis;
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (!active || !visible || (button != 0 && button != 1) || !isMouseOver(mouseX, mouseY)) {
+                return false;
+            }
+            int step = hasShiftDown() ? FAST_STEP : NORMAL_STEP;
+            target[axis] += button == 0 ? step : -step;
+            setMessage(labelFor(target, axis));
+            sendUpdate(target == pos1);
+            playDownSound(minecraft.getSoundManager());
+            return true;
+        }
+
+        private static Component labelFor(int[] target, int axis) {
+            return Component.literal(AXIS_LABELS[axis] + ": " + target[axis]);
+        }
     }
 }

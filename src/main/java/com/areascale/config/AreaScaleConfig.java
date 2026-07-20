@@ -13,7 +13,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Server-side config, edited by hand at config/areascale.json (a restart is needed for command-alias changes to take effect). */
+/** Server-side config, edited by hand at config/areascale.json. */
 public class AreaScaleConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger("areascale-config");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -23,13 +23,6 @@ public class AreaScaleConfig {
 
     /** Blocks a single /areascale capture may contain. 0 or negative means unlimited. */
     public long maxCaptureBlocks = 500_000L;
-
-    /**
-     * An additional command literal, alongside "areascale", that runs the exact same command
-     * (e.g. "scale" registers /scale expand|shrink|clear|undo). Leave blank to disable.
-     * Requires a server restart to take effect.
-     */
-    public String commandAlias = "";
 
     public static synchronized AreaScaleConfig get() {
         if (instance == null) {
