@@ -51,4 +51,3 @@ block, restores container contents and other block entity data, and respawns ca
 
 - [Fabric Loader](https://fabricmc.net/use/installer/) 0.17.2 or newer
 - [Fabric API](https://modrinth.com/mod/fabric-api)
-- Minecraft 1.21.8
