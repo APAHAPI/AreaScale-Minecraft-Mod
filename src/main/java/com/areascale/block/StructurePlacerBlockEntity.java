@@ -13,7 +13,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -96,7 +96,7 @@ public class StructurePlacerBlockEntity extends BlockEntity {
             tag.putBoolean("Glowing", true);
             tag.putInt("glow_color_override", GHOST_GLOW_COLOR);
 
-            Display.BlockDisplay display = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
+            Display.BlockDisplay display = new Display.BlockDisplay(EntityTypes.BLOCK_DISPLAY, level);
             ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), tag);
             display.load(input);
             level.addFreshEntity(display);

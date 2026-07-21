@@ -11,10 +11,11 @@ import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
@@ -53,7 +54,7 @@ public record StructureData(
     }
 
     /** A non-player entity (armor stand, etc.) captured inside the selection, position relative to the capture's min corner. */
-    public record CapturedEntity(double relX, double relY, double relZ, ResourceLocation entityType, CompoundTag data) {
+    public record CapturedEntity(double relX, double relY, double relZ, Identifier entityType, CompoundTag data) {
     }
 
     public int blockCount() {
@@ -125,7 +126,7 @@ public record StructureData(
         for (CompoundTag entry : tag.getListOrEmpty("entities").compoundStream().toList()) {
             entities.add(new CapturedEntity(
                 entry.getDoubleOr("x", 0), entry.getDoubleOr("y", 0), entry.getDoubleOr("z", 0),
-                ResourceLocation.parse(entry.getStringOr("entity_type", "minecraft:pig")),
+                Identifier.parse(entry.getStringOr("entity_type", "minecraft:pig")),
                 entry.getCompoundOrEmpty("data")));
         }
 
@@ -282,7 +283,7 @@ public record StructureData(
         }
 
         for (CapturedEntity captured : entities) {
-            EntityType<?> type = EntityType.byString(captured.entityType().toString()).orElse(null);
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(captured.entityType()).orElse(null);
             if (type == null) {
                 continue;
             }

@@ -37,12 +37,12 @@ public final class SelectionManager {
 
         if (point == 1) {
             selection.setPos1(pos, dimension);
-            player.displayClientMessage(
-                Component.translatable("areascale.selection.pos1", pos.getX(), pos.getY(), pos.getZ()), true);
+            player.sendOverlayMessage(
+                Component.translatable("areascale.selection.pos1", pos.getX(), pos.getY(), pos.getZ()));
         } else {
             selection.setPos2(pos, dimension);
-            player.displayClientMessage(
-                Component.translatable("areascale.selection.pos2", pos.getX(), pos.getY(), pos.getZ()), true);
+            player.sendOverlayMessage(
+                Component.translatable("areascale.selection.pos2", pos.getX(), pos.getY(), pos.getZ()));
         }
     }
 }

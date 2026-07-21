@@ -9,11 +9,11 @@ import com.areascale.selection.SelectionManager;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTabs;
 
 import org.slf4j.Logger;
@@ -29,7 +29,7 @@ public class AreaScaleMod implements ModInitializer {
         ModBlocks.initialize();
         ModBlockEntities.initialize();
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
             .register(entries -> {
                 entries.accept(ModItems.SELECTION_WAND);
                 entries.accept(ModItems.STRUCTURE_CAPSULE);
@@ -37,8 +37,8 @@ public class AreaScaleMod implements ModInitializer {
                 entries.accept(ModBlocks.STRUCTURE_PLACER);
             });
 
-        PayloadTypeRegistry.playC2S().register(SetSelectionPointPayload.TYPE, SetSelectionPointPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(ClearSelectionPayload.TYPE, ClearSelectionPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(SetSelectionPointPayload.TYPE, SetSelectionPointPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ClearSelectionPayload.TYPE, ClearSelectionPayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(SetSelectionPointPayload.TYPE, (payload, context) ->
             context.server().execute(() ->
@@ -50,7 +50,7 @@ public class AreaScaleMod implements ModInitializer {
         LOGGER.info("Area Scale initialized.");
     }
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 }

@@ -8,6 +8,7 @@ import java.util.UUID;
 import com.mojang.serialization.Codec;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -30,7 +31,7 @@ import net.minecraft.world.level.saveddata.SavedDataType;
  */
 public class StructureDataStorage extends SavedData {
     public static final SavedDataType<StructureDataStorage> TYPE = new SavedDataType<>(
-        "areascale_structures",
+        Identifier.fromNamespaceAndPath("areascale", "areascale_structures"),
         StructureDataStorage::new,
         codec(),
         DataFixTypes.SAVED_DATA_COMMAND_STORAGE

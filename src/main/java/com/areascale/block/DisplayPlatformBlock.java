@@ -54,7 +54,7 @@ public class DisplayPlatformBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (level.isClientSide || !(stack.getItem() instanceof StructureCapsuleItem)) {
+        if (level.isClientSide() || !(stack.getItem() instanceof StructureCapsuleItem)) {
             // Not our item - let the game fall through to useWithoutItem (e.g. empty-hand pickup).
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
@@ -62,7 +62,7 @@ public class DisplayPlatformBlock extends Block implements EntityBlock {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (platform.isOccupied()) {
-            player.displayClientMessage(Component.translatable("block.areascale.display_platform.occupied"), true);
+            player.sendOverlayMessage(Component.translatable("block.areascale.display_platform.occupied"));
             return InteractionResult.FAIL;
         }
 
@@ -71,7 +71,7 @@ public class DisplayPlatformBlock extends Block implements EntityBlock {
         Optional<StructureData> data = summary.flatMap(s -> StructureCapsuleItem.readFull(serverLevel, stack));
 
         if (summary.isEmpty() || data.isEmpty()) {
-            player.displayClientMessage(Component.translatable("block.areascale.display_platform.invalid_capsule"), true);
+            player.sendOverlayMessage(Component.translatable("block.areascale.display_platform.invalid_capsule"));
             return InteractionResult.FAIL;
         }
 
@@ -82,7 +82,7 @@ public class DisplayPlatformBlock extends Block implements EntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(level.getBlockEntity(pos) instanceof DisplayPlatformBlockEntity platform)) {

@@ -1,5 +1,6 @@
 package com.areascale.client;
 
+import com.areascale.AreaScaleMod;
 import com.areascale.ModItems;
 import com.areascale.network.ClearSelectionPayload;
 import com.areascale.network.SetSelectionPointPayload;
@@ -8,9 +9,9 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 
@@ -23,16 +24,19 @@ import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
 public class AreaScaleModClient implements ClientModInitializer {
+    private static final KeyMapping.Category KEY_CATEGORY =
+        KeyMapping.Category.register(AreaScaleMod.id("main"));
+
     private static final KeyMapping EDIT_COORDINATES_KEY = new KeyMapping(
         "key.areascale.edit_coordinates",
         InputConstants.Type.KEYSYM,
         GLFW.GLFW_KEY_U,
-        "key.categories.areascale"
+        KEY_CATEGORY
     );
 
     @Override
     public void onInitializeClient() {
-        KeyBindingHelper.registerKeyBinding(EDIT_COORDINATES_KEY);
+        KeyMappingHelper.registerKeyMapping(EDIT_COORDINATES_KEY);
 
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             ItemStack stack = player.getItemInHand(hand);
@@ -60,14 +64,14 @@ public class AreaScaleModClient implements ClientModInitializer {
                     continue;
                 }
                 if (ClientSelectionState.getPos1() == null || ClientSelectionState.getPos2() == null) {
-                    client.player.displayClientMessage(Component.translatable("commands.areascale.select_first"), true);
+                    client.player.sendOverlayMessage(Component.translatable("commands.areascale.select_first"));
                     continue;
                 }
-                client.setScreen(new CoordinateEditScreen());
+                client.gui.setScreen(new CoordinateEditScreen());
             }
         });
 
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(SelectionBoxRenderer::render);
+        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(SelectionBoxRenderer::render);
 
         ClientPlayNetworking.registerGlobalReceiver(ClearSelectionPayload.TYPE, (payload, context) -> {
             ClientSelectionState.setPos1(null);

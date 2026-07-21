@@ -20,7 +20,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
@@ -139,7 +140,7 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
             // data loss or orientation bug (verified: the full BlockState, including
             // facing/part/rotation, round-trips correctly through BlockState.CODEC). The
             // Structure Placer places actual blocks, so those render perfectly there.
-            Display.BlockDisplay display = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
+            Display.BlockDisplay display = new Display.BlockDisplay(EntityTypes.BLOCK_DISPLAY, level);
             ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), tag);
             display.load(input);
             level.addFreshEntity(display);
@@ -161,10 +162,10 @@ public class DisplayPlatformBlockEntity extends BlockEntity {
      */
     private static BlockState displayStateFor(BlockState state) {
         if (state.is(Blocks.WATER)) {
-            return Blocks.LIGHT_BLUE_STAINED_GLASS.defaultBlockState();
+            return Blocks.STAINED_GLASS.pick(DyeColor.LIGHT_BLUE).defaultBlockState();
         }
         if (state.is(Blocks.LAVA)) {
-            return Blocks.ORANGE_STAINED_GLASS.defaultBlockState();
+            return Blocks.STAINED_GLASS.pick(DyeColor.ORANGE).defaultBlockState();
         }
         return state;
     }

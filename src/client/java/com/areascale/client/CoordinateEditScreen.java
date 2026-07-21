@@ -4,9 +4,10 @@ import com.areascale.network.SetSelectionPointPayload;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 
@@ -64,28 +65,28 @@ public class CoordinateEditScreen extends Screen {
      * render() alone can never suppress it; this is the method that actually controls it.
      */
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         // Intentionally empty - no panorama, no blur, no menu-background texture. The world
         // stays fully visible and sharp behind this screen.
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         int hintY = 20 + 3 * (BUTTON_HEIGHT + 2) + 4;
         int panelRight = 8 + BUTTON_WIDTH + 10 + BUTTON_WIDTH + PANEL_MARGIN;
         int panelBottom = hintY + font.lineHeight + PANEL_MARGIN;
         // Drawn before the buttons/text so it sits behind them - fill() immediately followed
-        // by drawString()/widget rendering in the same render() call is the same order vanilla
-        // itself uses for backdrop-behind-text (see GuiGraphics#drawStringWithBackdrop), so this
-        // reliably stays behind everything drawn after it.
+        // by text()/widget rendering in the same extractRenderState() call is the same order
+        // vanilla itself uses for backdrop-behind-text, so this reliably stays behind
+        // everything drawn after it.
         graphics.fill(PANEL_MARGIN, PANEL_MARGIN, panelRight, panelBottom, PANEL_COLOR);
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
-        graphics.drawString(font, "Pos 1", 8, 8, LABEL_COLOR, true);
-        graphics.drawString(font, "Pos 2", 8 + BUTTON_WIDTH + 10, 8, LABEL_COLOR, true);
+        graphics.text(font, "Pos 1", 8, 8, LABEL_COLOR, true);
+        graphics.text(font, "Pos 2", 8 + BUTTON_WIDTH + 10, 8, LABEL_COLOR, true);
 
-        graphics.drawString(font,
+        graphics.text(font,
             "Left-click +1, right-click -1 (shift: +/-10) - Esc to close",
             8, hintY, HINT_COLOR, true);
     }
@@ -130,12 +131,18 @@ public class CoordinateEditScreen extends Screen {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (!active || !visible || (button != 0 && button != 1) || !isMouseOver(mouseX, mouseY)) {
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+            extractDefaultSprite(graphics);
+            extractDefaultLabel(graphics.textRendererForWidget(this, GuiGraphicsExtractor.HoveredTextEffects.TOOLTIP_AND_CURSOR));
+        }
+
+        @Override
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            if (!active || !visible || (event.button() != 0 && event.button() != 1) || !isMouseOver(event.x(), event.y())) {
                 return false;
             }
-            int step = hasShiftDown() ? FAST_STEP : NORMAL_STEP;
-            target[axis] += button == 0 ? step : -step;
+            int step = event.hasShiftDown() ? FAST_STEP : NORMAL_STEP;
+            target[axis] += event.button() == 0 ? step : -step;
             setMessage(labelFor(target, axis));
             sendUpdate(target == pos1);
             playDownSound(minecraft.getSoundManager());

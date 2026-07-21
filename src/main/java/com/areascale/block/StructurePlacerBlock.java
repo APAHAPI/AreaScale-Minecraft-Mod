@@ -60,7 +60,7 @@ public class StructurePlacerBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (level.isClientSide || !(stack.getItem() instanceof StructureCapsuleItem)) {
+        if (level.isClientSide() || !(stack.getItem() instanceof StructureCapsuleItem)) {
             return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (!(level.getBlockEntity(pos) instanceof StructurePlacerBlockEntity placer)) {
@@ -71,7 +71,7 @@ public class StructurePlacerBlock extends Block implements EntityBlock {
         Optional<StructureCapsuleItem.CapsuleSummary> summary = StructureCapsuleItem.readSummary(stack);
         Optional<StructureData> maybeData = summary.flatMap(s -> StructureCapsuleItem.readFull(serverLevel, stack));
         if (summary.isEmpty() || maybeData.isEmpty()) {
-            player.displayClientMessage(Component.translatable("block.areascale.structure_placer.invalid_capsule"), true);
+            player.sendOverlayMessage(Component.translatable("block.areascale.structure_placer.invalid_capsule"));
             return InteractionResult.FAIL;
         }
 
@@ -79,14 +79,14 @@ public class StructurePlacerBlock extends Block implements EntityBlock {
 
         if (!placer.isPreviewing()) {
             placer.startPreview(serverLevel, data, player.getDirection());
-            player.displayClientMessage(Component.translatable("block.areascale.structure_placer.previewing"), true);
+            player.sendOverlayMessage(Component.translatable("block.areascale.structure_placer.previewing"));
             return InteractionResult.SUCCESS;
         }
 
         BlockPos anchor = placer.anchor();
         Direction facing = placer.facing();
         if (!data.canPlace(serverLevel, anchor, facing)) {
-            player.displayClientMessage(Component.translatable("block.areascale.structure_placer.blocked"), true);
+            player.sendOverlayMessage(Component.translatable("block.areascale.structure_placer.blocked"));
             return InteractionResult.FAIL;
         }
 
@@ -97,13 +97,13 @@ public class StructurePlacerBlock extends Block implements EntityBlock {
         // world's saved structure registry doesn't grow forever. Safe as long as no other
         // capsule/platform still references this id (see StructureDataStorage's docs).
         StructureDataStorage.get(serverLevel).remove(summary.get().structureId());
-        player.displayClientMessage(Component.translatable("block.areascale.structure_placer.placed"), true);
+        player.sendOverlayMessage(Component.translatable("block.areascale.structure_placer.placed"));
         return InteractionResult.SUCCESS;
     }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(level.getBlockEntity(pos) instanceof StructurePlacerBlockEntity placer) || !placer.isPreviewing()) {
@@ -111,7 +111,7 @@ public class StructurePlacerBlock extends Block implements EntityBlock {
         }
 
         placer.cancelPreview((ServerLevel) level);
-        player.displayClientMessage(Component.translatable("block.areascale.structure_placer.cancelled"), true);
+        player.sendOverlayMessage(Component.translatable("block.areascale.structure_placer.cancelled"));
         return InteractionResult.SUCCESS;
     }
 }

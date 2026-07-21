@@ -3,9 +3,8 @@ package com.areascale.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -15,11 +14,12 @@ public final class SelectionBoxRenderer {
     private static final float GREEN = 0.85f;
     private static final float BLUE = 0.1f;
     private static final float ALPHA = 1.0f;
+    private static final float LINE_WIDTH = 2.0f;
 
     private SelectionBoxRenderer() {
     }
 
-    public static void render(WorldRenderContext context) {
+    public static void render(LevelRenderContext context) {
         BlockPos p1 = ClientSelectionState.getPos1();
         BlockPos p2 = ClientSelectionState.getPos2();
         if (p1 == null && p2 == null) {
@@ -32,12 +32,6 @@ public final class SelectionBoxRenderer {
             p1 = p2;
         }
 
-        PoseStack matrixStack = context.matrixStack();
-        MultiBufferSource consumers = context.consumers();
-        if (matrixStack == null || !(consumers instanceof MultiBufferSource.BufferSource bufferSource)) {
-            return;
-        }
-
         int minX = Math.min(p1.getX(), p2.getX());
         int minY = Math.min(p1.getY(), p2.getY());
         int minZ = Math.min(p1.getZ(), p2.getZ());
@@ -45,7 +39,7 @@ public final class SelectionBoxRenderer {
         int maxY = Math.max(p1.getY(), p2.getY()) + 1;
         int maxZ = Math.max(p1.getZ(), p2.getZ()) + 1;
 
-        Vec3 camera = context.camera().getPosition();
+        Vec3 camera = context.levelState().cameraRenderState.pos;
 
         double x1 = minX - camera.x;
         double y1 = minY - camera.y;
@@ -54,14 +48,8 @@ public final class SelectionBoxRenderer {
         double y2 = maxY - camera.y;
         double z2 = maxZ - camera.z;
 
-        matrixStack.pushPose();
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.lines());
-        PoseStack.Pose pose = matrixStack.last();
-
-        drawBoxEdges(buffer, pose, x1, y1, z1, x2, y2, z2);
-        bufferSource.endBatch(RenderType.lines());
-
-        matrixStack.popPose();
+        context.submitNodeCollector().submitCustomGeometry(context.poseStack(), RenderTypes.lines(),
+            (pose, buffer) -> drawBoxEdges(buffer, pose, x1, y1, z1, x2, y2, z2));
     }
 
     private static void drawBoxEdges(VertexConsumer buffer, PoseStack.Pose pose,
@@ -100,9 +88,11 @@ public final class SelectionBoxRenderer {
 
         buffer.addVertex(pose, (float) x1, (float) y1, (float) z1)
             .setColor(RED, GREEN, BLUE, ALPHA)
-            .setNormal(pose, nx, ny, nz);
+            .setNormal(pose, nx, ny, nz)
+            .setLineWidth(LINE_WIDTH);
         buffer.addVertex(pose, (float) x2, (float) y2, (float) z2)
             .setColor(RED, GREEN, BLUE, ALPHA)
-            .setNormal(pose, nx, ny, nz);
+            .setNormal(pose, nx, ny, nz)
+            .setLineWidth(LINE_WIDTH);
     }
 }
