@@ -9,9 +9,9 @@ Select an area:
 Prefer typing exact numbers? With a selection active, press `U` (rebindable under Options > Controls > Area Scale) to open a minimal overlay showing the six X/Y/Z values as real clickable buttons - no menu chrome, no dark background beyond a light legibility panel, the world and the wireframe box stay fully visible. Left-click a value to +1 it, right-click to -1 (hold shift for +/-10). Pressing `U` with no selection yet just tells you to select an area first.
 
 
-2. Capture it:
+2. Capture it:Run `/areascale expand <factor>` or `/areascale shrink <factor>` (e.g. `/areascale shrink 4` for 1/4 scale, `/areascale expand 3` for 3x). This removes the original blocks and gives you a Structure Capsule - a single item holding everything: every block, chest/shulker contents, sign text, spawner settings,and any armor stands or other entities that were inside the selection.
 
-Run `/areascale expand <factor>` or `/areascale shrink <factor>` (e.g. `/areascale shrink 4` for 1/4 scale, `/areascale expand 3` for 3x). This removes the original blocks and gives you a Structure Capsule - a single item holding everything: every block, chest/shulker contents, sign text, spawner settings, and any armor stands or other entities that were inside the selection.
+Prefer a GUI, or playing Hardcore where commands are disabled? Press `C` (rebindable under Options > Controls > Area Scale) to open the Capture Screen: type an amount, then click **Shrink** or **Expand**. It works even when commands can't be used; the commands still work as before.
 
 
 3. Display it: 
@@ -49,5 +49,6 @@ block, restores container contents and other block entity data, and respawns ca
 
 ### Requirements
 
-- [Fabric Loader](https://fabricmc.net/use/installer/) 0.17.2 or newer
-- [Fabric API](https://modrinth.com/mod/fabric-api)
+- [Fabric Loader](https://fabricmc.net/use/installer/) 0.19.3 or newer
+- [Fabric API](https://modrinth.com/mod/fabric-api) (built against 0.152.1+26.2)
+- Minecraft 26.2 (Java 25 or newer)
