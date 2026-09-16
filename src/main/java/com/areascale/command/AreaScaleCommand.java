@@ -3,12 +3,9 @@ package com.areascale.command;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.areascale.ModItems;
-import com.areascale.config.AreaScaleConfig;
+import com.areascale.capture.CaptureService;
 import com.areascale.item.StructureCapsuleItem;
-import com.areascale.selection.PlayerSelection;
 import com.areascale.selection.SelectionManager;
-import com.areascale.structure.StructureData;
 import com.areascale.structure.StructureDataStorage;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -18,7 +15,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
@@ -47,63 +43,16 @@ public final class AreaScaleCommand {
     private static int capture(CommandContext<CommandSourceStack> ctx, boolean expand) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         double factor = DoubleArgumentType.getDouble(ctx, "factor");
-        if (factor <= 0) {
-            ctx.getSource().sendFailure(Component.translatable("commands.areascale.invalid_factor"));
-            return 0;
+
+        // The capture itself lives in CaptureService so the in-game Capture Screen can run the
+        // exact same operation; this just reports the outcome to the command source.
+        CaptureService.Result result = CaptureService.capture(player, factor, expand);
+        if (result.success()) {
+            ctx.getSource().sendSuccess(result::message, true);
+        } else {
+            ctx.getSource().sendFailure(result.message());
         }
-        float scale = (float) (expand ? factor : 1.0 / factor);
-
-        PlayerSelection selection = SelectionManager.get(player);
-        if (!selection.isComplete()) {
-            ctx.getSource().sendFailure(Component.translatable("commands.areascale.no_selection"));
-            return 0;
-        }
-        if (selection.getDimension() != player.level().dimension()) {
-            ctx.getSource().sendFailure(Component.translatable("commands.areascale.different_dimension"));
-            return 0;
-        }
-
-        BlockPos p1 = selection.getPos1();
-        BlockPos p2 = selection.getPos2();
-        BlockPos min = new BlockPos(
-            Math.min(p1.getX(), p2.getX()),
-            Math.min(p1.getY(), p2.getY()),
-            Math.min(p1.getZ(), p2.getZ()));
-        BlockPos max = new BlockPos(
-            Math.max(p1.getX(), p2.getX()),
-            Math.max(p1.getY(), p2.getY()),
-            Math.max(p1.getZ(), p2.getZ()));
-
-        StructureData data = StructureData.capture(player.level(), min, max, scale);
-        if (data.blockCount() == 0) {
-            ctx.getSource().sendFailure(Component.translatable("commands.areascale.empty_selection"));
-            return 0;
-        }
-
-        long maxBlocks = AreaScaleConfig.get().maxCaptureBlocks;
-        if (maxBlocks > 0 && data.blockCount() > maxBlocks) {
-            ctx.getSource().sendFailure(Component.translatable("commands.areascale.too_large", maxBlocks, data.blockCount()));
-            return 0;
-        }
-
-        data.clearSource(player.level(), min);
-        SelectionManager.clearAndNotify(player);
-
-        UUID structureId = StructureDataStorage.get(player.level()).store(data);
-        ItemStack capsule = StructureCapsuleItem.createReferencing(ModItems.STRUCTURE_CAPSULE,
-            structureId, data.sizeX(), data.sizeY(), data.sizeZ(), data.scale(), data.blockCount());
-        if (!player.getInventory().add(capsule)) {
-            player.drop(capsule, false);
-        }
-
-        UndoManager.record(player, structureId, data, min);
-
-        String factorText = trimFactor(factor);
-        String mode = expand ? "expand" : "shrink";
-        ctx.getSource().sendSuccess(() -> Component.translatable("commands.areascale.captured",
-            mode, factorText, data.sizeX(), data.sizeY(), data.sizeZ(), data.blockCount()), true);
-
-        return 1;
+        return result.success() ? 1 : 0;
     }
 
     private static int clear(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -160,12 +109,5 @@ public final class AreaScaleCommand {
             }
         }
         return false;
-    }
-
-    private static String trimFactor(double factor) {
-        if (factor == Math.floor(factor)) {
-            return String.valueOf((long) factor);
-        }
-        return String.valueOf(factor);
     }
 }

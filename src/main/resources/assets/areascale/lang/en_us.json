@@ -3,7 +3,15 @@
   "item.areascale.structure_capsule": "Structure Capsule",
   "block.areascale.display_platform": "Display Platform",
   "key.areascale.edit_coordinates": "Edit Selection Coordinates",
+  "key.areascale.capture": "Capture Structure",
   "key.categories.areascale": "Area Scale",
+
+  "areascale.capture.title": "Capture Structure",
+  "areascale.capture.field": "Amount",
+  "areascale.capture.field_hint": "e.g. 4",
+  "areascale.capture.shrink": "Shrink",
+  "areascale.capture.expand": "Expand",
+  "areascale.capture.invalid": "Type a number greater than 0.",
 
   "areascale.selection.pos1": "Position 1 set to %s, %s, %s",
   "areascale.selection.pos2": "Position 2 set to %s, %s, %s",
@@ -26,6 +34,7 @@
   "commands.areascale.undo_creative_only": "Undo is only available in creative mode.",
   "commands.areascale.nothing_to_undo": "There's nothing to undo.",
   "commands.areascale.undone": "Undone - the structure has been restored.",
+  "commands.areascale.not_permitted": "Capturing isn't permitted for you on this server.",
 
   "item.areascale.structure_placer": "Structure Placer",
   "block.areascale.structure_placer": "Structure Placer",
