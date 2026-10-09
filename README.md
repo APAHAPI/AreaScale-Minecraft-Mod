@@ -49,6 +49,6 @@ block, restores container contents and other block entity data, and respawns ca
 
 ### Requirements
 
-- [Fabric Loader](https://fabricmc.net/use/installer/) 0.19.3 or newer
-- [Fabric API](https://modrinth.com/mod/fabric-api) (built against 0.152.1+26.2)
-- Minecraft 26.2 (Java 25 or newer)
+- [Fabric Loader](https://fabricmc.net/use/installer/) 0.19.5 or newer
+- [Fabric API](https://modrinth.com/mod/fabric-api) (built against 0.162.0+26.3)
+- Minecraft 26.3 (Java 25 or newer)

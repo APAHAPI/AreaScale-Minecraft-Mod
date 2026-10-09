@@ -14,6 +14,7 @@ import com.areascale.structure.StructureDataStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -71,7 +72,7 @@ public final class CaptureService {
         ItemStack capsule = StructureCapsuleItem.createReferencing(ModItems.STRUCTURE_CAPSULE,
             structureId, data.sizeX(), data.sizeY(), data.sizeZ(), data.scale(), data.blockCount());
         if (!player.getInventory().add(capsule)) {
-            player.drop(capsule, false);
+            player.drop(capsule, false, Prediction.SERVER_ONLY);
         }
 
         UndoManager.record(player, structureId, data, min);

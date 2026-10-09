@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "areascale:display_platform"
+        "recipes": "areascale:display_platform"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "areascale:selection_wand"
+        "recipes": "areascale:selection_wand"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

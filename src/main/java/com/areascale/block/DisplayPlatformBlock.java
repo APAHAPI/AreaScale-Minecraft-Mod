@@ -9,6 +9,7 @@ import com.areascale.structure.StructureData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -94,7 +95,7 @@ public class DisplayPlatformBlock extends Block implements EntityBlock {
             ItemStack capsule = StructureCapsuleItem.createReferencing(ModItems.STRUCTURE_CAPSULE,
                 displayed.id(), data.sizeX(), data.sizeY(), data.sizeZ(), data.scale(), data.blockCount());
             if (!player.getInventory().add(capsule)) {
-                player.drop(capsule, false);
+                player.drop(capsule, false, Prediction.SERVER_ONLY);
             }
             return InteractionResult.SUCCESS;
         }).orElse(InteractionResult.PASS);

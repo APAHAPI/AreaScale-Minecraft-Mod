@@ -21,23 +21,21 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 
-import org.lwjgl.glfw.GLFW;
-
 public class AreaScaleModClient implements ClientModInitializer {
     private static final KeyMapping.Category KEY_CATEGORY =
         KeyMapping.Category.register(AreaScaleMod.id("main"));
 
     private static final KeyMapping EDIT_COORDINATES_KEY = new KeyMapping(
         "key.areascale.edit_coordinates",
-        InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_U,
+        InputConstants.Type.KEYBOARD,
+        InputConstants.KEY_U,
         KEY_CATEGORY
     );
 
     private static final KeyMapping CAPTURE_KEY = new KeyMapping(
         "key.areascale.capture",
-        InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_C,
+        InputConstants.Type.KEYBOARD,
+        InputConstants.KEY_C,
         KEY_CATEGORY
     );
 
