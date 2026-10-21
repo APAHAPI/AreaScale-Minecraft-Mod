@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "areascale:block/display_platform" }
+  }
+}
